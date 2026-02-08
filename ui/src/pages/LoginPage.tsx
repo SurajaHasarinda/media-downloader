@@ -36,7 +36,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <div className="mb-6 inline-block">
-                        <img src="/media-downloader.png" alt="Media Downloader" className="w-16 h-16" />
+                        <img src="/media-downloader.svg" alt="Media Downloader" className="w-16 h-16" />
                     </div>
                     <h1 className="text-4xl font-extrabold text-white mb-2">Media Downloader</h1>
                     <p className="text-slate-400">Your personal media automation center.</p>
