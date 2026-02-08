@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    # Build using the Dockerfile in the current directory
+    build: .
+    image: media-downloader:latest
+    container_name: media-downloader
+    ports:
+      # Map host port 8001 to container port 8001
+      - "8095:8095"
+    environment:
+      - TZ=Asia/Colombo
+    volumes:
+      # Persist data (database)
+      - ./data:/app/data
+      # Persist downloads
+      - ./downloads:/app/downloads
+    restart: unless-stopped
