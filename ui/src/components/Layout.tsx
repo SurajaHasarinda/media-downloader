@@ -42,7 +42,7 @@ const Layout = ({ children }: LayoutProps) => {
                 {/* Logo */}
                 <div className="p-6 border-b border-slate-800">
                     <div className="flex items-center gap-3">
-                        <img src="/media-downloader.png" alt="Logo" className="w-10 h-10" />
+                        <img src="/media-downloader.svg" alt="Logo" className="w-10 h-10" />
                         <div>
                             <h1 className="text-lg font-bold text-white tracking-tight">Media Downloader</h1>
                             <p className="text-xs text-slate-500">Auto-Download Manager</p>
@@ -102,7 +102,7 @@ const Layout = ({ children }: LayoutProps) => {
                     {/* Top bar with logo and logout */}
                     <div className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-2">
-                            <img src="/media-downloader.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
+                            <img src="/media-downloader.svg" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
                             <span className="font-bold text-white">Media Downloader</span>
                         </div>
                         <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-400">
