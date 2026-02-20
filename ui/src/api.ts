@@ -218,6 +218,13 @@ class ApiService {
         return res.data;
     }
 
+    async getRecommendations(limit: number = 20): Promise<Movie[]> {
+        const res = await this.client.get('/movies/recommendations', {
+            params: { limit }
+        });
+        return res.data;
+    }
+
     // Wishlist
     async getWishlist(status?: string): Promise<WishlistItem[]> {
         const res = await this.client.get('/wishlist', {
