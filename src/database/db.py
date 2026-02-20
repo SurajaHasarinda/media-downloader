@@ -2,7 +2,7 @@ import aiosqlite
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime
-from src.database.models import WishlistItem, MovieStatus, User
+from src.database.models import WishlistItem, MovieStatus, User, FavoriteItem
 
 # Database path
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "media_downloader.db"
@@ -41,6 +41,22 @@ class Database:
                     username TEXT UNIQUE NOT NULL,
                     hashed_password TEXT NOT NULL,
                     is_default BOOLEAN DEFAULT 1
+                )
+            """)
+            
+            # Create favorites table for liked movies (recommendations)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS favorites (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tmdb_id INTEGER UNIQUE,
+                    imdb_id TEXT,
+                    title TEXT NOT NULL,
+                    release_date TEXT,
+                    overview TEXT,
+                    genres TEXT,
+                    poster_url TEXT,
+                    vote_average REAL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
             
@@ -145,6 +161,96 @@ class Database:
             )
             await db.commit()
             return cursor.rowcount > 0
+    
+    # ============ Favorites Management ============
+    
+    async def add_to_favorites(self, item: FavoriteItem) -> int:
+        """Add a movie to favorites. Returns the new ID."""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("""
+                INSERT OR REPLACE INTO favorites 
+                (tmdb_id, imdb_id, title, release_date, overview, genres, 
+                 poster_url, vote_average)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                item.tmdb_id, item.imdb_id, item.title, item.release_date,
+                item.overview, item.genres, item.poster_url,
+                item.vote_average
+            ))
+            await db.commit()
+            return cursor.lastrowid
+    
+    async def get_favorites(self) -> List[FavoriteItem]:
+        """Get all favorite movies."""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute(
+                "SELECT * FROM favorites ORDER BY created_at DESC"
+            )
+            rows = await cursor.fetchall()
+            return [FavoriteItem(
+                id=row['id'],
+                tmdb_id=row['tmdb_id'],
+                imdb_id=row['imdb_id'],
+                title=row['title'],
+                release_date=row['release_date'],
+                overview=row['overview'],
+                genres=row['genres'],
+                poster_url=row['poster_url'],
+                vote_average=row['vote_average'],
+                created_at=row['created_at']
+            ) for row in rows]
+    
+    async def get_favorite_item(self, tmdb_id: int) -> Optional[FavoriteItem]:
+        """Get a specific favorite item by TMDB ID."""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute(
+                "SELECT * FROM favorites WHERE tmdb_id = ?",
+                (tmdb_id,)
+            )
+            row = await cursor.fetchone()
+            if row:
+                return FavoriteItem(
+                    id=row['id'],
+                    tmdb_id=row['tmdb_id'],
+                    imdb_id=row['imdb_id'],
+                    title=row['title'],
+                    release_date=row['release_date'],
+                    overview=row['overview'],
+                    genres=row['genres'],
+                    poster_url=row['poster_url'],
+                    vote_average=row['vote_average'],
+                    created_at=row['created_at']
+                )
+            return None
+    
+    async def is_favorite(self, tmdb_id: int) -> bool:
+        """Check if a movie is in favorites."""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                "SELECT 1 FROM favorites WHERE tmdb_id = ? LIMIT 1",
+                (tmdb_id,)
+            )
+            row = await cursor.fetchone()
+            return row is not None
+    
+    async def remove_from_favorites(self, tmdb_id: int) -> bool:
+        """Remove a movie from favorites. Returns True if deleted."""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                "DELETE FROM favorites WHERE tmdb_id = ?", 
+                (tmdb_id,)
+            )
+            await db.commit()
+            return cursor.rowcount > 0
+    
+    async def get_favorite_tmdb_ids(self) -> List[int]:
+        """Get all TMDB IDs from favorites (for quick lookup)."""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("SELECT tmdb_id FROM favorites")
+            rows = await cursor.fetchall()
+            return [row[0] for row in rows]
     
     # ============ User Management ============
     

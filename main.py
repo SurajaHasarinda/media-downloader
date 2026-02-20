@@ -17,7 +17,7 @@ from pathlib import Path
 from src.database import Database
 from src.services import QBittorrentService
 from src.services.scheduler_service import SchedulerService
-from src.controllers import movies_router, wishlist_router, downloads_router, storage_router, auth_router, settings_router
+from src.controllers import movies_router, wishlist_router, favorites_router, downloads_router, storage_router, auth_router, settings_router
 from src.controllers.schedules import router as schedules_router
 from src.core.auth import get_password_hash
 from src.core.deps import get_current_user
@@ -75,6 +75,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")  # Auth first (no auth required for login)
 app.include_router(movies_router, prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(wishlist_router, prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(favorites_router, prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(downloads_router, prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(schedules_router, prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(storage_router, prefix="/api", dependencies=[Depends(get_current_user)])

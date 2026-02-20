@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Star, Calendar, TrendingUp, Loader2, Film, Check, Info } from 'lucide-react';
+import { Search, Plus, Star, Calendar, TrendingUp, Loader2, Film, Check, Info, Heart } from 'lucide-react';
 import { api, Movie } from '../api';
 import Snackbar, { SnackbarType } from '../components/Snackbar';
 import MovieDetailModal from '../components/MovieDetailModal';
@@ -13,13 +13,15 @@ const SearchPage = () => {
     const [addingId, setAddingId] = useState<number | null>(null);
     const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
     const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+    const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
+    const [togglingFavoriteId, setTogglingFavoriteId] = useState<number | null>(null);
     const [snackbar, setSnackbar] = useState<{ isOpen: boolean; message: string; type: SnackbarType }>({
         isOpen: false,
         message: '',
         type: 'success',
     });
 
-    // Fetch popular movies on mount
+    // Fetch popular movies and favorite IDs on mount
     useEffect(() => {
         const fetchPopular = async () => {
             setLoadingPopular(true);
@@ -32,7 +34,18 @@ const SearchPage = () => {
                 setLoadingPopular(false);
             }
         };
+
+        const fetchFavoriteIds = async () => {
+            try {
+                const ids = await api.getFavoriteIds();
+                setFavoriteIds(new Set(ids));
+            } catch (error) {
+                console.error('Failed to fetch favorite IDs:', error);
+            }
+        };
+
         fetchPopular();
+        fetchFavoriteIds();
     }, []);
 
     // Debounced search
@@ -76,6 +89,41 @@ const SearchPage = () => {
             });
         } finally {
             setAddingId(null);
+        }
+    };
+
+    const handleToggleFavorite = async (movie: Movie) => {
+        setTogglingFavoriteId(movie.tmdb_id);
+        try {
+            const result = await api.toggleFavorite(movie.tmdb_id);
+            if (result.action === 'added') {
+                setFavoriteIds(prev => new Set(prev).add(movie.tmdb_id));
+                setSnackbar({
+                    isOpen: true,
+                    message: `"${movie.title}" added to favorites ❤️`,
+                    type: 'success',
+                });
+            } else {
+                setFavoriteIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(movie.tmdb_id);
+                    return next;
+                });
+                setSnackbar({
+                    isOpen: true,
+                    message: `"${movie.title}" removed from favorites`,
+                    type: 'success',
+                });
+            }
+        } catch (error: any) {
+            const msg = error.response?.data?.detail || 'Failed to update favorite';
+            setSnackbar({
+                isOpen: true,
+                message: msg,
+                type: 'error',
+            });
+        } finally {
+            setTogglingFavoriteId(null);
         }
     };
 
@@ -170,6 +218,8 @@ const SearchPage = () => {
                     {displayMovies.map((movie, index) => {
                         const isAdded = addedIds.has(movie.tmdb_id);
                         const isAdding = addingId === movie.tmdb_id;
+                        const isFav = favoriteIds.has(movie.tmdb_id);
+                        const isTogglingFav = togglingFavoriteId === movie.tmdb_id;
 
                         return (
                             <div
@@ -234,6 +284,32 @@ const SearchPage = () => {
                                             <span className="text-xs font-semibold text-white">{movie.vote_average.toFixed(1)}</span>
                                         </div>
                                     )}
+
+                                    {/* Favorite Heart Button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleToggleFavorite(movie);
+                                        }}
+                                        disabled={isTogglingFav}
+                                        className={`absolute top-2 left-2 p-1.5 rounded-full backdrop-blur-sm transition-all duration-300 ${isFav
+                                                ? 'bg-rose-500/30 border border-rose-500/40 text-rose-400'
+                                                : 'bg-black/40 border border-transparent text-slate-400 opacity-0 group-hover:opacity-100 hover:text-rose-400 hover:bg-rose-500/20'
+                                            }`}
+                                        title={isFav ? 'Unlike' : 'Like'}
+                                    >
+                                        <Heart
+                                            size={14}
+                                            className={`transition-all duration-300 ${isFav ? 'fill-rose-400' : ''} ${isTogglingFav ? 'animate-pulse' : ''}`}
+                                        />
+                                    </button>
+
+                                    {/* Favorited badge - visible when not hovered */}
+                                    {isFav && (
+                                        <div className="absolute top-2 left-2 p-1.5 rounded-full bg-rose-500/30 border border-rose-500/40 text-rose-400 group-hover:hidden pointer-events-none">
+                                            <Heart size={14} className="fill-rose-400" />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Info */}
@@ -263,6 +339,9 @@ const SearchPage = () => {
                 onAddToWishlist={handleAddToWishlist}
                 isAdded={selectedMovie ? addedIds.has(selectedMovie.tmdb_id) : false}
                 isAdding={selectedMovie ? addingId === selectedMovie.tmdb_id : false}
+                onToggleFavorite={handleToggleFavorite}
+                isFavorite={selectedMovie ? favoriteIds.has(selectedMovie.tmdb_id) : false}
+                isTogglingFavorite={selectedMovie ? togglingFavoriteId === selectedMovie.tmdb_id : false}
             />
 
             {/* Snackbar */}
