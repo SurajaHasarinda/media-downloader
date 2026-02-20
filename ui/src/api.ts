@@ -20,6 +20,11 @@ export interface WishlistItem extends Movie {
     created_at?: string;
 }
 
+export interface FavoriteItem extends Movie {
+    id?: number;
+    created_at?: string;
+}
+
 export interface Download {
     name: string;
     hash: string;
@@ -228,6 +233,26 @@ class ApiService {
 
     async removeFromWishlist(tmdbId: number): Promise<void> {
         await this.client.delete(`/wishlist/${tmdbId}`);
+    }
+
+    // Favorites
+    async getFavorites(): Promise<FavoriteItem[]> {
+        const res = await this.client.get('/favorites');
+        return res.data;
+    }
+
+    async getFavoriteIds(): Promise<number[]> {
+        const res = await this.client.get('/favorites/ids');
+        return res.data;
+    }
+
+    async toggleFavorite(tmdbId: number): Promise<{ action: 'added' | 'removed'; tmdb_id?: number; favorite?: FavoriteItem }> {
+        const res = await this.client.post(`/favorites/${tmdbId}`);
+        return res.data;
+    }
+
+    async removeFromFavorites(tmdbId: number): Promise<void> {
+        await this.client.delete(`/favorites/${tmdbId}`);
     }
 
     // Downloads

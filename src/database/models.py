@@ -109,6 +109,23 @@ class AddToWishlistRequest(BaseModel):
     tmdb_id: int
 
 
+class FavoriteItem(BaseModel):
+    """A liked/favorited movie for recommendations."""
+    id: Optional[int] = None
+    tmdb_id: int
+    imdb_id: Optional[str] = None
+    title: str
+    release_date: Optional[str] = None
+    overview: Optional[str] = None
+    genres: Optional[str] = None
+    poster_url: Optional[str] = None
+    vote_average: Optional[float] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ============ Download & Torrent Models ============
 
 class TorrentInfo(BaseModel):
