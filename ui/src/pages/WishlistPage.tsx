@@ -16,7 +16,10 @@ import {
     Tag,
     ExternalLink,
     ThumbsUp,
-    Sparkles
+    Sparkles,
+    Settings,
+    X,
+    Monitor
 } from 'lucide-react';
 import { api, WishlistItem, FavoriteItem, ProcessResult } from '../api';
 import Snackbar, { SnackbarType } from '../components/Snackbar';
@@ -71,6 +74,9 @@ const WishlistPage = () => {
     const [loadingWishlist, setLoadingWishlist] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [filter, setFilter] = useState<string>('all');
+    const [maxSizeGb, setMaxSizeGb] = useState(1.5);
+    const [minQuality, setMinQuality] = useState(720);
+    const [showSettings, setShowSettings] = useState(false);
     const [processResult, setProcessResult] = useState<ProcessResult | null>(null);
 
     // Favorites state
@@ -167,7 +173,7 @@ const WishlistPage = () => {
         setProcessing(true);
         setProcessResult(null);
         try {
-            const result = await api.processWishlist(3, 720);
+            const result = await api.processWishlist(maxSizeGb, minQuality);
             setProcessResult(result);
             fetchWishlist();
 
@@ -217,8 +223,8 @@ const WishlistPage = () => {
                 <button
                     onClick={() => setActiveTab('wishlist')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'wishlist'
-                            ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
                         }`}
                 >
                     <Heart size={16} className={activeTab === 'wishlist' ? 'fill-white' : ''} />
@@ -231,8 +237,8 @@ const WishlistPage = () => {
                 <button
                     onClick={() => setActiveTab('favorites')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'favorites'
-                            ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                        ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
                         }`}
                 >
                     <ThumbsUp size={16} />
@@ -288,6 +294,16 @@ const WishlistPage = () => {
                                         <span className="sm:hidden">Process ({processableCount})</span>
                                     </>
                                 )}
+                            </button>
+                            <button
+                                onClick={() => setShowSettings(true)}
+                                className={`p-3 rounded-xl border transition-all ${showSettings
+                                    ? 'bg-primary/20 text-primary border-primary/30'
+                                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800'
+                                    }`}
+                                title="Process Settings"
+                            >
+                                <Settings size={18} />
                             </button>
                         </div>
                     </div>
@@ -592,6 +608,96 @@ const WishlistPage = () => {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* Process Settings Modal */}
+            {showSettings && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowSettings(false);
+                    }}
+                >
+                    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+                    <div
+                        className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in z-10 p-6"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <Settings className="text-primary" size={24} />
+                                Process Settings
+                            </h2>
+                            <button
+                                onClick={() => setShowSettings(false)}
+                                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            {/* Max Size */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">
+                                    Max Size: {maxSizeGb} GB
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0.5"
+                                    max="10"
+                                    step="0.5"
+                                    value={maxSizeGb}
+                                    onChange={(e) => setMaxSizeGb(parseFloat(e.target.value))}
+                                    className="w-full accent-primary"
+                                />
+                                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                                    <span>0.5 GB</span>
+                                    <span>10 GB</span>
+                                </div>
+                            </div>
+
+                            {/* Quality */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Minimum Quality</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { value: 480, label: '480p' },
+                                        { value: 720, label: '720p' },
+                                        { value: 1080, label: '1080p' },
+                                        { value: 2160, label: '4K' }
+                                    ].map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={() => setMinQuality(opt.value)}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${minQuality === opt.value
+                                                ? 'bg-primary/10 border-primary text-primary ring-1 ring-primary/50'
+                                                : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600 hover:text-slate-300'
+                                                }`}
+                                        >
+                                            <Monitor size={20} className="mb-2" />
+                                            <span className="font-semibold">{opt.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-3 mt-8 pt-4 border-t border-slate-800">
+                            <button
+                                type="button"
+                                onClick={() => setShowSettings(false)}
+                                className="w-full px-4 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle size={18} />
+                                Apply & Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Confirm Dialog */}
