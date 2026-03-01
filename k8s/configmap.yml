@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: media-downloader-config
+  namespace: media-downloader
+  labels:
+    app: media-downloader
+data:
+  ALGORITHM: "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+  PROWLARR_URL: "http://prowlarr-service:9696"
+  QBITTORRENT_HOST: "http://qbittorrent-service:8080"
+  DOWNLOAD_PATH: "/app/downloads"
+  TZ: "Asia/Colombo"

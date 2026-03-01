@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: media-downloader
+  namespace: media-downloader
+  labels:
+    app: media-downloader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: media-downloader
+  template:
+    metadata:
+      labels:
+        app: media-downloader
+    spec:
+      containers:
+      - name: media-downloader-app
+        image: surajadev/media-downloader:latest
+        ports:
+        - containerPort: 8095
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "125m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        envFrom:
+        - configMapRef:
+            name: media-downloader-config
+        env:
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: media-downloader-secret
+              key: secret-key
+        - name: TMDB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: media-downloader-secret
+              key: tmdb-api-key
+        - name: PROWLARR_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: media-downloader-secret
+              key: prowlarr-api-key
+        - name: QBITTORRENT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: media-downloader-secret
+              key: qbittorrent-username
+        - name: QBITTORRENT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: media-downloader-secret
+              key: qbittorrent-password
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: downloads-volume
+          mountPath: /app/downloads
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8095
+          initialDelaySeconds: 40
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8095
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: data-volume
+        hostPath:
+          path: /opt/media-downloader/data
+          type: DirectoryOrCreate
+      - name: downloads-volume
+        hostPath:
+          path: /opt/media-downloader/downloads
+          type: DirectoryOrCreate
