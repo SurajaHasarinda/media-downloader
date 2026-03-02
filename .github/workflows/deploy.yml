@@ -47,9 +47,6 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          PROWLARR_API_KEY: ${{ secrets.PROWLARR_API_KEY }}
-          QBITTORRENT_USERNAME: ${{ secrets.QBITTORRENT_USERNAME }}
-          QBITTORRENT_PASSWORD: ${{ secrets.QBITTORRENT_PASSWORD }}
         run: |
           envsubst < k8s/secret.yml > k8s/secret-rendered.yml
 
@@ -62,7 +59,7 @@ jobs:
           scp k8s/service.yml ${{ env.K3S_USER }}@${{ env.K3S_HOST }}:/tmp/
           scp k8s/prowlarr.yml ${{ env.K3S_USER }}@${{ env.K3S_HOST }}:/tmp/
           scp k8s/qbittorrent.yml ${{ env.K3S_USER }}@${{ env.K3S_HOST }}:/tmp/
-
+          scp k8s/flaresolverr.yml ${{ env.K3S_USER }}@${{ env.K3S_HOST }}:/tmp/
       - name: Deploy to K3s
         run: |
           ssh ${{ env.K3S_USER }}@${{ env.K3S_HOST }} << 'EOF'
@@ -71,19 +68,22 @@ jobs:
             sudo k3s kubectl apply -f /tmp/secret.yml
             sudo k3s kubectl apply -f /tmp/prowlarr.yml
             sudo k3s kubectl apply -f /tmp/qbittorrent.yml
+            sudo k3s kubectl apply -f /tmp/flaresolverr.yml
             sudo k3s kubectl apply -f /tmp/deployment.yml
             sudo k3s kubectl apply -f /tmp/service.yml
 
             # Force pull the latest images
             sudo k3s kubectl rollout restart deployment/prowlarr -n media-downloader
             sudo k3s kubectl rollout restart deployment/qbittorrent -n media-downloader
+            sudo k3s kubectl rollout restart deployment/flaresolverr -n media-downloader
             sudo k3s kubectl rollout restart deployment/media-downloader -n media-downloader
 
             # Wait for rollouts to complete
             sudo k3s kubectl rollout status deployment/prowlarr -n media-downloader --timeout=120s
             sudo k3s kubectl rollout status deployment/qbittorrent -n media-downloader --timeout=120s
+            sudo k3s kubectl rollout status deployment/flaresolverr -n media-downloader --timeout=120s
             sudo k3s kubectl rollout status deployment/media-downloader -n media-downloader --timeout=120s
 
             # Cleanup temp files
-            rm -f /tmp/namespace.yml /tmp/configmap.yml /tmp/secret.yml /tmp/deployment.yml /tmp/service.yml /tmp/prowlarr.yml /tmp/qbittorrent.yml
+            rm -f /tmp/namespace.yml /tmp/configmap.yml /tmp/secret.yml /tmp/deployment.yml /tmp/service.yml /tmp/prowlarr.yml /tmp/qbittorrent.yml /tmp/flaresolverr.yml
           EOF

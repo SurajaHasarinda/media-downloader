@@ -22,10 +22,10 @@ spec:
         - containerPort: 8095
         resources:
           requests:
-            memory: "128Mi"
+            memory: "256Mi"
             cpu: "125m"
           limits:
-            memory: "512Mi"
+            memory: "1Gi"
             cpu: "500m"
         envFrom:
         - configMapRef:
@@ -41,21 +41,6 @@ spec:
             secretKeyRef:
               name: media-downloader-secret
               key: tmdb-api-key
-        - name: PROWLARR_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: media-downloader-secret
-              key: prowlarr-api-key
-        - name: QBITTORRENT_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: media-downloader-secret
-              key: qbittorrent-username
-        - name: QBITTORRENT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: media-downloader-secret
-              key: qbittorrent-password
         volumeMounts:
         - name: data-volume
           mountPath: /app/data

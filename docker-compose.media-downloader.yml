@@ -17,6 +17,7 @@ services:
     depends_on:
       - qbittorrent
       - prowlarr
+      - flaresolverr
     restart: unless-stopped
 
   prowlarr:
@@ -47,4 +48,14 @@ services:
       - 8080:8080 # Web UI port
       - 6881:6881 # Torrent communication (TCP)
       - 6881:6881/udp # Torrent communication (UDP)
+    restart: unless-stopped
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=info
+      - TZ=Asia/Colombo
+    ports:
+      - 8191:8191
     restart: unless-stopped
